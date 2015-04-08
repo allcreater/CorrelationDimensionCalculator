@@ -1,0 +1,72 @@
+﻿<Window x:Class="CorrelationDimensionCalculator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d3="http://research.microsoft.com/DynamicDataDisplay/1.0"
+        xmlns:l="clr-namespace:CorrelationDimensionCalculator"
+        Title="Correlation dimension calculator" Height="426" Width="800">
+        
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <TabControl Name="tabControlMain" Grid.Row="1" Grid.Column="0">
+            <TabItem Header="Properties">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="30" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Row="0" Content="Shift"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DataShift}" PreviewTextInput="NumberValidationTextBox" Margin="2"/>
+                    
+                    <Label Grid.Row="1" Content="Number of dimensions"/>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="2" >
+                        <Slider Minimum="2" Maximum="10" LargeChange="2" SmallChange="1" TickPlacement="BottomRight" Value="{Binding NumberOfDimensions}" IsSnapToTickEnabled="True" Width="85"/>
+                        <Label Content="{Binding NumberOfDimensions}" Width="25"/>
+                    </StackPanel>
+
+                    <Label Grid.Row="2" Content="Active data column"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="2" >
+                        <Slider Minimum="0" Maximum="{Binding NumberOfDataColumns, Converter={l:IntToDoubleConverter AdditiveValue=-1.0}}" LargeChange="2" SmallChange="1" TickPlacement="BottomRight" Value="{Binding ActiveDataColumn}" IsSnapToTickEnabled="True" Width="85"/>
+                        <Label Content="{Binding ActiveDataColumn}" Width="25"/>
+                    </StackPanel>
+
+                    <Label Grid.Row="3" Content="Source file"/>
+                    <Button Grid.Row="3" Grid.Column="1" Content="Open..." Click="FileOpen" Margin="2"/>
+                    
+                    <Label Name="labelFileInfo" Grid.Row="4" Grid.ColumnSpan="2" VerticalAlignment="Top"/>
+                    
+                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" FlowDirection="RightToLeft">
+                        <Button Content="Compute CD" Click="ComputeCD"/>
+                        <Button Content="Compute Hurst" Click="ComputeHurst"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="CD results">
+                <d3:ChartPlotter Name="plotterCD" MouseMove="plotterCD_MouseMove"/>
+            </TabItem>
+            <TabItem Header="Kholmogorov's enthropy">
+                <d3:ChartPlotter Name="plotterKE"/>
+            </TabItem>
+            <TabItem Header="2D PPS">
+                <d3:ChartPlotter  Name="plotterPPS"/>
+            </TabItem>
+        </TabControl>
+
+    </Grid>
+</Window>
