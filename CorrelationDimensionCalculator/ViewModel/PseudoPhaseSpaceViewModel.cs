@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 using System.Text.RegularExpressions;
 using System.IO;
-using System.Windows;
 using System.Globalization;
+using Point2D = System.Windows.Point;
 
-namespace CorrelationDimensionCalculator
+namespace CorrelationDimensionCalculator.ViewModel
 {
-    public class ViewModel : System.ComponentModel.INotifyPropertyChanged
+    public class PseudoPhaseSpaceViewModel : System.ComponentModel.INotifyPropertyChanged
     {
         private int m_nod = 2, m_dataShift = 2, m_dataColumn = 1;
         private List<List<double>> m_rawData;
@@ -25,20 +25,20 @@ namespace CorrelationDimensionCalculator
 
         protected PseudoPhaseSpace Model { get; private set; }
 
-        public ViewModel ()
+        public PseudoPhaseSpaceViewModel ()
         {
         }
 
-        private IEnumerable<Point> Get2DPseudophaseSpaceAttractor()
+        private IEnumerable<Point2D> Get2DPseudophaseSpaceAttractor()
         {
             for (int i = 0; i < RawData.Count; ++i)
             {
                 int j = (i + DataShift) % RawData.Count;
-                yield return new Point(RawData[i], RawData[j]);
+                yield return new Point2D(RawData[i], RawData[j]);
             }
         }
 
-        public IEnumerable<Point> ComputeCorrelationalDimensionCurve(int N)
+        public IEnumerable<Point2D> ComputeCorrelationalDimensionCurve(int N)
         {
             return Model.ComputeCorrelation(N);
         }
@@ -97,14 +97,14 @@ namespace CorrelationDimensionCalculator
 
         public class CurveEventArgs : EventArgs
         {
-            public IEnumerable<Point> Curve { get; private set; }
+            public IEnumerable<Point2D> Curve { get; private set; }
 
-            public CurveEventArgs(IEnumerable<Point> curve) { Curve = curve; }
+            public CurveEventArgs(IEnumerable<Point2D> curve) { Curve = curve; }
         }
 
         public event EventHandler<CurveEventArgs> PseudophaseSpaceChanged;
 
-        private void OnPseudophaseSpaceChanged(IEnumerable<Point> curve)
+        private void OnPseudophaseSpaceChanged(IEnumerable<Point2D> curve)
         {
             if (PseudophaseSpaceChanged != null)
                 PseudophaseSpaceChanged(this, new CurveEventArgs(curve));

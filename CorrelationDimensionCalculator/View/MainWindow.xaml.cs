@@ -3,23 +3,17 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Text.RegularExpressions;
-
+using CorrelationDimensionCalculator.ViewModel;
 using Microsoft.Research.DynamicDataDisplay;
 using Microsoft.Research.DynamicDataDisplay.DataSources;
 
-namespace CorrelationDimensionCalculator
+using Point2D = System.Windows.Point;
+
+namespace CorrelationDimensionCalculator.View
 {
 
     public abstract class BaseConverter : System.Windows.Markup.MarkupExtension
@@ -56,24 +50,24 @@ namespace CorrelationDimensionCalculator
     /// </summary>
     public partial class MainWindow : Window
     {
-        public ViewModel ViewModel { get; private set; }
+        public PseudoPhaseSpaceViewModel spaceViewModel { get; private set; }
 
-        private IList<Point>[] m_CDresults;
+        private IList<Point2D>[] m_CDresults;
         private IList<LineGraph> m_CDlineGraphs = new List<LineGraph>();
         public MainWindow()
         {
             InitializeComponent();
 
-            ViewModel = new ViewModel();
-            DataContext = ViewModel;
+            spaceViewModel = new PseudoPhaseSpaceViewModel();
+            DataContext = spaceViewModel;
 
-            ViewModel.PseudophaseSpaceChanged += ViewModel_PseudophaseSpaceChanged;
+            spaceViewModel.PseudophaseSpaceChanged += PseudoPhaseSpaceViewModel_Changed;
         }
 
-        private void ViewModel_PseudophaseSpaceChanged (object sender, ViewModel.CurveEventArgs e)
+        private void PseudoPhaseSpaceViewModel_Changed (object sender, PseudoPhaseSpaceViewModel.CurveEventArgs e)
         {
             plotterPPS.RemoveUserElements();
-            plotterPPS.AddLineGraph(new ObservableDataSource<Point>(e.Curve));
+            plotterPPS.AddLineGraph(new ObservableDataSource<Point2D>(e.Curve));
         }
 
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
@@ -87,43 +81,43 @@ namespace CorrelationDimensionCalculator
             var ofd = new OpenFileDialog() { Filter = "Text files|*.txt|All files|*.*" };
             if (ofd.ShowDialog() == true)
             {
-                ViewModel.ReadFile(ofd.FileName);
+                spaceViewModel.ReadFile(ofd.FileName);
 
                 labelFileInfo.Content = String.Format("Name: {0}\nRaw size: {1} bytes\nLength: {2} records",
                     System.IO.Path.GetFileName(ofd.FileName),
                     new FileInfo(ofd.FileName).Length,
-                    ViewModel.RawData.Count
+                    spaceViewModel.RawData.Count
                     );
             }
         }
 
         private void ComputeCD(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.RawData == null)
+            if (spaceViewModel.RawData == null)
                 return;
 
             plotterCD.RemoveUserElements();
             m_CDlineGraphs.Clear();
-            m_CDresults = new List<Point>[ViewModel.NumberOfDimensions];
-            for (int n = 0; n < ViewModel.NumberOfDimensions; n++)
+            m_CDresults = new List<Point2D>[spaceViewModel.NumberOfDimensions];
+            for (int n = 0; n < spaceViewModel.NumberOfDimensions; n++)
             {
-                m_CDresults[n] = ViewModel.ComputeCorrelationalDimensionCurve(n + 2).ToList();
-                var lineGraph = plotterCD.AddLineGraph(new ObservableDataSource<Point>(m_CDresults[n]), 1);
+                m_CDresults[n] = spaceViewModel.ComputeCorrelationalDimensionCurve(n + 2).ToList();
+                var lineGraph = plotterCD.AddLineGraph(new ObservableDataSource<Point2D>(m_CDresults[n]), 1);
                 m_CDlineGraphs.Add(lineGraph);
             }
-            
+
             tabControlMain.SelectedIndex = 1;
 
             plotterKE.RemoveUserElements();
-            for (int curveIndexA = 0, curveIndexB = 1; curveIndexB < ViewModel.NumberOfDimensions; curveIndexA++, curveIndexB++)
+            for (int curveIndexA = 0, curveIndexB = 1; curveIndexB < spaceViewModel.NumberOfDimensions; curveIndexA++, curveIndexB++)
             {
                 double firstCommonElement = Math.Max(m_CDresults[curveIndexA].First().X, m_CDresults[curveIndexB].First().X);
                 int i = m_CDresults[curveIndexA].IndexOf(m_CDresults[curveIndexA].First((p) => (p.X == firstCommonElement)));
                 int j = m_CDresults[curveIndexB].IndexOf(m_CDresults[curveIndexB].First((p) => (p.X == firstCommonElement)));
 
-                var intersection = new ObservableDataSource<Point>();
+                var intersection = new ObservableDataSource<Point2D>();
                 for (; i < m_CDresults[curveIndexA].Count && j < m_CDresults[curveIndexB].Count && m_CDresults[curveIndexA][i].X == m_CDresults[curveIndexB][j].X; i++, j++)
-                    intersection.AppendAsync(Dispatcher, new Point(m_CDresults[curveIndexA][i].X, m_CDresults[curveIndexA][i].Y - m_CDresults[curveIndexB][j].Y));
+                    intersection.AppendAsync(Dispatcher, new Point2D(m_CDresults[curveIndexA][i].X, m_CDresults[curveIndexA][i].Y - m_CDresults[curveIndexB][j].Y));
 
                 plotterKE.AddLineGraph(intersection, 1, String.Format("KE {0}-{1}", curveIndexA, curveIndexB));
             }
@@ -131,10 +125,10 @@ namespace CorrelationDimensionCalculator
 
         private void ComputeHurst(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.RawData == null)
+            if (spaceViewModel.RawData == null)
                 return;
 
-            MessageBox.Show(String.Format("Hurst exponent is {0}", ViewModel.ComputeHurstExponent()), "Computation result");
+            MessageBox.Show(String.Format("Hurst exponent is {0}", spaceViewModel.ComputeHurstExponent()), "Computation result");
         }
 
         private void plotterCD_MouseMove(object sender, MouseEventArgs e)
